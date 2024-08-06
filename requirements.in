@@ -11,6 +11,7 @@ black
 isort
 pytest
 requests
+lxml
 
 jupyterlab
 ipywidgets

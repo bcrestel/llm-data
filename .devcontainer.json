@@ -1,8 +1,8 @@
 {
-    "image": "IMAGE_NAME:IMAGE_TAG",
+    "image": "llm_data:1.0",
     "customizations": {
         "vscode": {
-            "extensions": ["microsoft.python"]
+            "extensions": ["ms-python.python", "njpwerner.autodocstring"]
         }
     }
 }
