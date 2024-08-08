@@ -11,5 +11,5 @@ SCALE_EVAL_MAPPING = {
     "Spanish": "Spanish",
     "Instruction Following": "Instruct",
     "Math": "Math",
-    "Adversarial Robustness": "Adversarial"
+    "Adversarial Robustness": "Adversarial",
 }
