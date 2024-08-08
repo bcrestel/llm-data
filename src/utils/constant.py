@@ -4,6 +4,7 @@ LOCAL_PATH_TO_INT_DATA = "data/02_intermediate"
 PATH_TO_PRICING_IN_LLM_PRICING = "src/lib/data.ts"
 
 SCALE_LEADERBOARD_URL = "https://scale.com/leaderboard"
+SCALE_LEADERBOARD_FILE_PREFIX = "scale_leaderboard"
 SCALE_EVAL_ADV_ROB = "Adversarial Robustness"
 SCALE_COL_MODEL = "Model"
 SCALE_EVAL_MAPPING = {

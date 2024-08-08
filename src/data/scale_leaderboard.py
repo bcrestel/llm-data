@@ -4,6 +4,9 @@ import re
 from datetime import datetime
 from io import StringIO
 from pathlib import Path
+import glob
+
+from typing import Optional, Tuple
 
 import pandas as pd
 import requests
@@ -16,6 +19,7 @@ from src.utils.constant import (
     SCALE_EVAL_ADV_ROB,
     SCALE_EVAL_MAPPING,
     SCALE_LEADERBOARD_URL,
+    SCALE_LEADERBOARD_FILE_PREFIX
 )
 
 logging.basicConfig(
@@ -35,23 +39,48 @@ class ScaleLeaderbord:
         response = requests.get(self.url)
         html_content = response.text
         # serialize to data/raw
-        file_name = Path(LOCAL_PATH_TO_RAW_DATA) / self.file_name_raw()
+        file_name = Path(LOCAL_PATH_TO_RAW_DATA) / self.file_name(type="raw")
+        logger.info(f"Saving url {self.url} to file {file_name}")
         with open(file_name, "wb") as file:
             pickle.dump(html_content, file)
 
     @staticmethod
-    def file_name_raw() -> Path:
-        now = datetime.now()
-        date = now.strftime("%Y-%m-%d")
-        return Path(f"scale_leaderboard_raw_{date}.pickle")
+    def file_name(type: str, date: Optional[datetime]=None) -> Path:
+        if date is None:
+            now = datetime.now()
+            date = now.strftime("%Y-%m-%d")
+        return Path(f"{SCALE_LEADERBOARD_FILE_PREFIX}_{type}_{date}.pickle")
+    
+    @staticmethod
+    def get_type_date_from_path(path: str) -> Tuple[str, str]:
+        """Extract the type of data and the date it was created from a file path
 
-    def parse_html(self) -> None:
+        Args:
+            path (str): global path
+
+        Returns:
+            Tuple[str, str]: type, date
+        """
+        path = Path(path)
+        file_name = path.stem
+        file_name_components = file_name.split("_")
+        return file_name_components[-2], file_name_components[-1]
+
+    def parse_html(self, file_name: Optional[Path]=None) -> None:
+        if file_name is None:
+            # if no file_name provided, select the most recent raw file
+            file_pattern = Path(LOCAL_PATH_TO_RAW_DATA) / f"{SCALE_LEADERBOARD_FILE_PREFIX}_*.pickle"
+            file_names = {}
+            for ff in glob.glob(str(file_pattern)):
+                type, date = self.get_type_date_from_path(ff)
+                file_names[pd.to_datetime(date)] = ff
+            date = min(file_names.keys())
+            file_name = file_names[date]
         # Load html in pickle format
-        file_name = Path(LOCAL_PATH_TO_RAW_DATA) / self.file_name_raw()
         with open(file_name, "rb") as file:
             html_content = pickle.load(file)
         logger.info(f"Loaded file {file_name}")
-        # Extract tables
+        # Extract tables from the html
         soup = BeautifulSoup(html_content, "html.parser")
         raw_tables = soup.find_all("div", class_="flex flex-col gap-4")
         tables = []
@@ -97,9 +126,14 @@ class ScaleLeaderbord:
             joined_table = pd.merge(
                 joined_table, table, on=SCALE_COL_MODEL, how="outer"
             )
-        # TODO: Add a timestamp, based on raw file name
+        # Add a timestamp
+        type, date = self.get_type_date_from_path(file_name)
+        joined_table['date'] = pd.to_datetime(date)
         logger.debug(joined_table)
-        # TODO: Save table to intermediate folder
+        # Save joined table in 02_intermediate folder
+        output_file_path = Path(LOCAL_PATH_TO_INT_DATA) / self.file_name(type="intermediate")
+        joined_table.to_parquet(path=output_file_path)
+        logger.info(f"Saved formatted Dataframe to {output_file_path}")
 
     @staticmethod
     def remove_leading_number(text):
