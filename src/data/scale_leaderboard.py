@@ -43,10 +43,10 @@ class ScaleLeaderbord:
     def file_name_raw() -> Path:
         now = datetime.now()
         date = now.strftime("%Y-%m-%d")
-        return Path(f"scale_leaderboard_{date}_raw.pickle")
+        return Path(f"scale_leaderboard_raw_{date}.pickle")
 
     def parse_html(self) -> None:
-        # Load html
+        # Load html in pickle format
         file_name = Path(LOCAL_PATH_TO_RAW_DATA) / self.file_name_raw()
         with open(file_name, "rb") as file:
             html_content = pickle.load(file)
