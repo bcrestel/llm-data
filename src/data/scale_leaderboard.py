@@ -1,11 +1,10 @@
+import glob
 import logging
 import pickle
 import re
 from datetime import datetime
 from io import StringIO
 from pathlib import Path
-import glob
-
 from typing import Optional, Tuple
 
 import pandas as pd
@@ -18,8 +17,8 @@ from src.utils.constant import (
     SCALE_COL_MODEL,
     SCALE_EVAL_ADV_ROB,
     SCALE_EVAL_MAPPING,
+    SCALE_LEADERBOARD_FILE_PREFIX,
     SCALE_LEADERBOARD_URL,
-    SCALE_LEADERBOARD_FILE_PREFIX
 )
 
 logging.basicConfig(
@@ -45,12 +44,12 @@ class ScaleLeaderbord:
             pickle.dump(html_content, file)
 
     @staticmethod
-    def file_name(type: str, date: Optional[datetime]=None) -> Path:
+    def file_name(type: str, date: Optional[datetime] = None) -> Path:
         if date is None:
             now = datetime.now()
             date = now.strftime("%Y-%m-%d")
         return Path(f"{SCALE_LEADERBOARD_FILE_PREFIX}_{type}_{date}.pickle")
-    
+
     @staticmethod
     def get_type_date_from_path(path: str) -> Tuple[str, str]:
         """Extract the type of data and the date it was created from a file path
@@ -66,10 +65,13 @@ class ScaleLeaderbord:
         file_name_components = file_name.split("_")
         return file_name_components[-2], file_name_components[-1]
 
-    def parse_html(self, file_name: Optional[Path]=None) -> None:
+    def parse_html(self, file_name: Optional[Path] = None) -> None:
         if file_name is None:
             # if no file_name provided, select the most recent raw file
-            file_pattern = Path(LOCAL_PATH_TO_RAW_DATA) / f"{SCALE_LEADERBOARD_FILE_PREFIX}_*.pickle"
+            file_pattern = (
+                Path(LOCAL_PATH_TO_RAW_DATA)
+                / f"{SCALE_LEADERBOARD_FILE_PREFIX}_*.pickle"
+            )
             file_names = {}
             for ff in glob.glob(str(file_pattern)):
                 type, date = self.get_type_date_from_path(ff)
@@ -128,10 +130,15 @@ class ScaleLeaderbord:
             )
         # Add a timestamp
         type, date = self.get_type_date_from_path(file_name)
-        joined_table['date'] = pd.to_datetime(date)
+        joined_table["date"] = pd.to_datetime(date)
+        # I don't think this is the date that should be used. This date should be the model release date. Once a model version is pinned, the date the evaluation is ran is irrelevant.
+        # Pricing for a given model will actually change. But that's a different dataset
+        # TODO: Build a directory of all models along with their information (release date, parameters,...)
         logger.debug(joined_table)
         # Save joined table in 02_intermediate folder
-        output_file_path = Path(LOCAL_PATH_TO_INT_DATA) / self.file_name(type="intermediate")
+        output_file_path = Path(LOCAL_PATH_TO_INT_DATA) / self.file_name(
+            type="intermediate"
+        )
         joined_table.to_parquet(path=output_file_path)
         logger.info(f"Saved formatted Dataframe to {output_file_path}")
 

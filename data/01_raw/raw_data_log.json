@@ -1,0 +1,14 @@
+[
+    {
+        "file_name": "scale_leaderboard_raw_2024-08-07.pickle",
+        "source": "src/data/scale_leaderboard.py--53c2124",
+        "date": "2024-08-07",
+        "shasum": "d6d0ac061b74a5c0d3032143a49319af3c86dd61"
+    },
+    {
+        "file_name": "Transformer-Catalog_2024-08-08.csv",
+        "source": "https://docs.google.com/spreadsheets/d/1ltyrAB6BL29cOv2fSpNQnnq2vbX8UrHl47d7FkIf6t4/edit?usp=sharing",
+        "date": "2024-08-08",
+        "shasum": "ab69daa8369e04f0a927acf6c508c42919f633ab"
+    }
+]
