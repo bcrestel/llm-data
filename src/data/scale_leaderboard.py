@@ -38,17 +38,17 @@ class ScaleLeaderbord:
         response = requests.get(self.url)
         html_content = response.text
         # serialize to data/raw
-        file_name = Path(LOCAL_PATH_TO_RAW_DATA) / self.file_name(type="raw")
+        file_name = Path(LOCAL_PATH_TO_RAW_DATA) / self.file_name(type="raw", extension="pickle")
         logger.info(f"Saving url {self.url} to file {file_name}")
         with open(file_name, "wb") as file:
             pickle.dump(html_content, file)
 
     @staticmethod
-    def file_name(type: str, date: Optional[datetime] = None) -> Path:
+    def file_name(type: str, extension: str, date: Optional[datetime] = None) -> Path:
         if date is None:
             now = datetime.now()
             date = now.strftime("%Y-%m-%d")
-        return Path(f"{SCALE_LEADERBOARD_FILE_PREFIX}_{type}_{date}.pickle")
+        return Path(f"{SCALE_LEADERBOARD_FILE_PREFIX}_{type}_{date}.{extension}")
 
     @staticmethod
     def get_type_date_from_path(path: str) -> Tuple[str, str]:
@@ -95,49 +95,49 @@ class ScaleLeaderbord:
 
             table_name = table.find("span").text
             logger.info(f"Processing table {table_name}")
+
             # process column Model
             table_pd[SCALE_COL_MODEL] = table_pd[SCALE_COL_MODEL].apply(
                 self.remove_leading_number
             )
             # Rename score column
             if table_name == SCALE_EVAL_ADV_ROB:
-                table_pd.rename(columns={"Number of Violations": "Score"}, inplace=True)
-            score_new_name = f"Score_{SCALE_EVAL_MAPPING[table_name]}"
-            table_pd.rename(columns={"Score": score_new_name}, inplace=True)
+                table_pd.rename(columns={"Number of Violations": "score"}, inplace=True)
+                table_pd["score_type"] = "Number of violations"
+            else:
+                table_pd.rename(columns={"Score": "score"}, inplace=True)
+                table_pd["score_type"] = "Score"
             # Split 95% CI column
-            table_pd[[f"{score_new_name}_95CI_max", f"{score_new_name}_95CI_min"]] = (
+            table_pd[["95CI_max", f"95CI_min"]] = (
                 table_pd["95% Confidence"]
                 .str.split("/", expand=True)
                 .astype(float)
-                .apply(lambda x: x + table_pd[score_new_name])
+                .apply(lambda x: x + table_pd["score"])
             )
             table_pd.drop(columns="95% Confidence", axis=1, inplace=True)
             table_pd = table_pd[
                 [
                     SCALE_COL_MODEL,
-                    f"{score_new_name}_95CI_min",
-                    score_new_name,
-                    f"{score_new_name}_95CI_max",
+                    "95CI_min",
+                    "score",
+                    "95CI_max",
                 ]
             ]
+            table_pd["evaluation_type"] = table_name
             logger.debug(table_pd)
             tables.append(table_pd)
-        # Do an outer join of all tables
-        joined_table = tables.pop()
-        for table in tables:
-            joined_table = pd.merge(
-                joined_table, table, on=SCALE_COL_MODEL, how="outer"
-            )
+        # Concatenate all tables
+        joined_table = pd.concat(tables, axis=0, ignore_index=True)
         # Add a timestamp
         type, date = self.get_type_date_from_path(file_name)
-        joined_table["date"] = pd.to_datetime(date)
-        # I don't think this is the date that should be used. This date should be the model release date. Once a model version is pinned, the date the evaluation is ran is irrelevant.
-        # Pricing for a given model will actually change. But that's a different dataset
-        # TODO: Build a directory of all models along with their information (release date, parameters,...)
+        joined_table["date_evaluation"] = pd.to_datetime(date)
+        # Add source
+        joined_table["raw_source"] = file_name
+
         logger.debug(joined_table)
         # Save joined table in 02_intermediate folder
         output_file_path = Path(LOCAL_PATH_TO_INT_DATA) / self.file_name(
-            type="intermediate"
+            type="intermediate", extension="parquet"
         )
         joined_table.to_parquet(path=output_file_path)
         logger.info(f"Saved formatted Dataframe to {output_file_path}")
@@ -145,6 +145,31 @@ class ScaleLeaderbord:
     @staticmethod
     def remove_leading_number(text):
         return re.sub(r"^\d+(?:st|nd|rd)?", "", text)
+    
+    def long_to_wide(self, long_df: pd.DataFrame) -> pd.DataFrame:
+        # TODO: Implement
+#            # Rename score column
+#            if table_name == SCALE_EVAL_ADV_ROB:
+#                table_pd.rename(columns={"Number of Violations": "Score"}, inplace=True)
+#            score_new_name = f"Score_{SCALE_EVAL_MAPPING[table_name]}"
+#            table_pd.rename(columns={"Score": score_new_name}, inplace=True)
+#            # Split 95% CI column
+#            table_pd[[f"{score_new_name}_95CI_max", f"{score_new_name}_95CI_min"]] = (
+#                table_pd["95% Confidence"]
+#                .str.split("/", expand=True)
+#                .astype(float)
+#                .apply(lambda x: x + table_pd[score_new_name])
+#            )
+#            table_pd.drop(columns="95% Confidence", axis=1, inplace=True)
+#            table_pd = table_pd[
+#                [
+#                    SCALE_COL_MODEL,
+#                    f"{score_new_name}_95CI_min",
+#                    score_new_name,
+#                    f"{score_new_name}_95CI_max",
+#                ]
+#            ]
+        raise NotImplemented
 
 
 if __name__ == "__main__":
