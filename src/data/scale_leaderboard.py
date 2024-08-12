@@ -1,6 +1,5 @@
 import glob
 import logging
-import pickle
 import re
 from datetime import datetime
 from io import StringIO
@@ -8,8 +7,6 @@ from pathlib import Path
 from typing import Optional, Tuple
 
 import pandas as pd
-import requests
-from bs4 import BeautifulSoup
 
 from src.utils.constant import (
     LOCAL_PATH_TO_INT_DATA,
@@ -20,6 +17,9 @@ from src.utils.constant import (
     SCALE_LEADERBOARD_FILE_PREFIX,
     SCALE_LEADERBOARD_URL,
 )
+from src.utils.pickle import load_from_pickle, save_to_pickle
+from src.utils.web import find_section_from_html, get_html_content_from_url
+from src.utils.date import get_date_YYYY_MM_DD
 
 logging.basicConfig(
     level=logging.DEBUG,
@@ -34,20 +34,17 @@ class ScaleLeaderbord:
 
     def get_raw_data(self) -> None:
         """Scrape webpage and save html"""
-        # scrape webpage
-        response = requests.get(self.url)
-        html_content = response.text
+        html_content = get_html_content_from_url(self.url)
         # serialize to data/raw
-        file_name = Path(LOCAL_PATH_TO_RAW_DATA) / self.file_name(type="raw", extension="pickle")
+        file_name = Path(LOCAL_PATH_TO_RAW_DATA) / self.file_name(
+            type="raw", extension="pickle"
+        )
         logger.info(f"Saving url {self.url} to file {file_name}")
-        with open(file_name, "wb") as file:
-            pickle.dump(html_content, file)
+        save_to_pickle(file_name=file_name, content=html_content)
 
     @staticmethod
     def file_name(type: str, extension: str, date: Optional[datetime] = None) -> Path:
-        if date is None:
-            now = datetime.now()
-            date = now.strftime("%Y-%m-%d")
+        date = get_date_YYYY_MM_DD() if date is None else date
         return Path(f"{SCALE_LEADERBOARD_FILE_PREFIX}_{type}_{date}.{extension}")
 
     @staticmethod
@@ -79,12 +76,10 @@ class ScaleLeaderbord:
             date = min(file_names.keys())
             file_name = file_names[date]
         # Load html in pickle format
-        with open(file_name, "rb") as file:
-            html_content = pickle.load(file)
+        html_content = load_from_pickle(file_name=file_name)
         logger.info(f"Loaded file {file_name}")
         # Extract tables from the html
-        soup = BeautifulSoup(html_content, "html.parser")
-        raw_tables = soup.find_all("div", class_="flex flex-col gap-4")
+        raw_tables = find_section_from_html(html_content)
         tables = []
         # process all tables
         for table in raw_tables:
@@ -145,30 +140,30 @@ class ScaleLeaderbord:
     @staticmethod
     def remove_leading_number(text):
         return re.sub(r"^\d+(?:st|nd|rd)?", "", text)
-    
+
     def long_to_wide(self, long_df: pd.DataFrame) -> pd.DataFrame:
         # TODO: Implement
-#            # Rename score column
-#            if table_name == SCALE_EVAL_ADV_ROB:
-#                table_pd.rename(columns={"Number of Violations": "Score"}, inplace=True)
-#            score_new_name = f"Score_{SCALE_EVAL_MAPPING[table_name]}"
-#            table_pd.rename(columns={"Score": score_new_name}, inplace=True)
-#            # Split 95% CI column
-#            table_pd[[f"{score_new_name}_95CI_max", f"{score_new_name}_95CI_min"]] = (
-#                table_pd["95% Confidence"]
-#                .str.split("/", expand=True)
-#                .astype(float)
-#                .apply(lambda x: x + table_pd[score_new_name])
-#            )
-#            table_pd.drop(columns="95% Confidence", axis=1, inplace=True)
-#            table_pd = table_pd[
-#                [
-#                    SCALE_COL_MODEL,
-#                    f"{score_new_name}_95CI_min",
-#                    score_new_name,
-#                    f"{score_new_name}_95CI_max",
-#                ]
-#            ]
+        #            # Rename score column
+        #            if table_name == SCALE_EVAL_ADV_ROB:
+        #                table_pd.rename(columns={"Number of Violations": "Score"}, inplace=True)
+        #            score_new_name = f"Score_{SCALE_EVAL_MAPPING[table_name]}"
+        #            table_pd.rename(columns={"Score": score_new_name}, inplace=True)
+        #            # Split 95% CI column
+        #            table_pd[[f"{score_new_name}_95CI_max", f"{score_new_name}_95CI_min"]] = (
+        #                table_pd["95% Confidence"]
+        #                .str.split("/", expand=True)
+        #                .astype(float)
+        #                .apply(lambda x: x + table_pd[score_new_name])
+        #            )
+        #            table_pd.drop(columns="95% Confidence", axis=1, inplace=True)
+        #            table_pd = table_pd[
+        #                [
+        #                    SCALE_COL_MODEL,
+        #                    f"{score_new_name}_95CI_min",
+        #                    score_new_name,
+        #                    f"{score_new_name}_95CI_max",
+        #                ]
+        #            ]
         raise NotImplemented
 
 
