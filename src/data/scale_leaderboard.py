@@ -17,9 +17,9 @@ from src.utils.constant import (
     SCALE_LEADERBOARD_FILE_PREFIX,
     SCALE_LEADERBOARD_URL,
 )
+from src.utils.date import get_date_YYYY_MM_DD
 from src.utils.pickle import load_from_pickle, save_to_pickle
 from src.utils.web import find_section_from_html, get_html_content_from_url
-from src.utils.date import get_date_YYYY_MM_DD
 
 logging.basicConfig(
     level=logging.DEBUG,

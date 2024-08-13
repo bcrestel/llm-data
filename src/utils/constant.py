@@ -16,6 +16,6 @@ SCALE_EVAL_MAPPING = {
     "Adversarial Robustness": "Adversarial",
 }
 
-HELM_LATEST_VERSION = "1.7.0"
-HELM_MODEL_URL = f"https://crfm.stanford.edu/helm/lite/v{HELM_LATEST_VERSION}/#/models"
-HELM_LEADERBOARD_FILE_PREFIX = "helm_models"
+HELM_REPO_MAIN = "https://api.github.com/repos/stanford-crfm/helm/commits/main"
+HELM_MODEL_URL = "https://raw.githubusercontent.com/stanford-crfm/helm/main/src/helm/config/model_metadata.yaml"
+HELM_MODEL_FILE_PREFIX = "helm_models"

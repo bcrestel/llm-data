@@ -1,5 +1,6 @@
 import subprocess
 
+
 def get_current_git_commit_short() -> str:
     """From ChatGPT
 
@@ -8,8 +9,13 @@ def get_current_git_commit_short() -> str:
     """
     try:
         # Run the git command to get the short commit hash
-        result = subprocess.run(['git', 'rev-parse', '--short', 'HEAD'], capture_output=True, text=True, check=True)
-        
+        result = subprocess.run(
+            ["git", "rev-parse", "--short", "HEAD"],
+            capture_output=True,
+            text=True,
+            check=True,
+        )
+
         # Strip any trailing newlines or spaces
         short_commit_hash = result.stdout.strip()
         return short_commit_hash
