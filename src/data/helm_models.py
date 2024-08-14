@@ -50,8 +50,7 @@ class HelmModels:
         chmod_from_top_to_bottom(
             LOCAL_PATH_TO_RAW_DATA, PATH_TO_RAW_DATA_LOG, permission=0o744
         )
-        html_string = get_html_content_from_url(self.url)
-        html_content = yaml.safe_load(html_string) # convert string to proper html
+        html_content = get_html_content_from_url(self.url)
         save_to_text(file_name=file_name, content=html_content)
         with open(PATH_TO_RAW_DATA_LOG, "r") as file:
             data = json.load(file)
