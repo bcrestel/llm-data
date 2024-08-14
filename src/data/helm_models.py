@@ -3,6 +3,7 @@ import logging
 from datetime import datetime
 from pathlib import Path
 from typing import Optional
+import yaml
 
 import requests
 
@@ -21,8 +22,8 @@ from src.utils.path import (
     chmod_from_top_to_bottom,
     get_shasum,
 )
-from src.utils.pickle import save_to_pickle
 from src.utils.web import get_html_content_from_url
+from src.utils.text import save_to_text
 
 logging.basicConfig(
     level=logging.DEBUG,
@@ -38,19 +39,20 @@ class HelmModels:
 
     def get_raw_data(self) -> None:
         """Scrape webpage and save html"""
-        html_content = get_html_content_from_url(self.url)
         # serialize to data/raw
         response = requests.get(self.main_repo_url)
         commit = response.json()["sha"][:7]
         file_name = Path(LOCAL_PATH_TO_RAW_DATA) / self.file_name(
-            type="raw", extension="pickle", commit=commit
+            type="raw", extension="yaml", commit=commit
         )
 
         logger.info(f"Saving url {self.url} to file {file_name}")
         chmod_from_top_to_bottom(
             LOCAL_PATH_TO_RAW_DATA, PATH_TO_RAW_DATA_LOG, permission=0o744
         )
-        save_to_pickle(file_name=file_name, content=html_content)
+        html_string = get_html_content_from_url(self.url)
+        html_content = yaml.safe_load(html_string) # convert string to proper html
+        save_to_text(file_name=file_name, content=html_content)
         with open(PATH_TO_RAW_DATA_LOG, "r") as file:
             data = json.load(file)
         logger.debug(data)
