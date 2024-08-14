@@ -62,6 +62,7 @@ mlflow_server: build
 	$(info ***** Starting the mlflow server *****)
 	$(DOCKER_RUN) -p 5000:5000 $(DOCKER_IMAGE) -c "mlflow server -h 0.0.0.0"
 
+# TODO: add command, with arguments, to process data
 #
 # Testing
 #
