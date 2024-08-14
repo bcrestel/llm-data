@@ -10,5 +10,11 @@
         "source": "https://docs.google.com/spreadsheets/d/1ltyrAB6BL29cOv2fSpNQnnq2vbX8UrHl47d7FkIf6t4/edit?usp=sharing",
         "date": "2024-08-08",
         "shasum": "ab69daa8369e04f0a927acf6c508c42919f633ab"
+    },
+    {
+        "file_name": "data/01_raw/helm_models_raw_2024-08-14_f520af5.yaml",
+        "source": "src/data/helm_models.py--1d52fc3",
+        "date": "2024-08-14",
+        "shasum": "9a0045605a0613eccf9fac2f06e50151d02b4fbb"
     }
 ]
