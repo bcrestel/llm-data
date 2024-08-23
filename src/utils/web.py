@@ -32,5 +32,5 @@ def find_section_from_html(html_content: str, name: str, class_: str) -> Iterabl
         Iterable[Any]: list of html for each sections identified
     """
     soup = BeautifulSoup(html_content, "html.parser")
-    raw_sections = soup.find_all("div", class_="flex flex-col gap-4")
+    raw_sections = soup.find_all(name, class_=class_)
     return raw_sections

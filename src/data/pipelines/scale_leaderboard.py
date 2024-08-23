@@ -63,7 +63,7 @@ class ScaleLeaderbord:
         return file_name_components[-2], file_name_components[-1]
 
     # TODO: rename: process_from_raw_to_intermediate
-    def parse_html(self, file_name: Optional[Path] = None) -> None:
+    def get_intermediate_from_raw(self, file_name: Optional[Path] = None) -> None:
         if file_name is None:
             # if no file_name provided, select the most recent raw file
             file_pattern = (
@@ -80,7 +80,9 @@ class ScaleLeaderbord:
         html_content = load_from_pickle(file_name=file_name)
         logger.info(f"Loaded file {file_name}")
         # Extract tables from the html
-        raw_tables = find_section_from_html(html_content)
+        raw_tables = find_section_from_html(
+            html_content, name="div", class_="flex flex-col gap-4"
+        )
         tables = []
         # process all tables
         for table in raw_tables:
@@ -125,7 +127,7 @@ class ScaleLeaderbord:
         # Concatenate all tables
         joined_table = pd.concat(tables, axis=0, ignore_index=True)
         # Add a timestamp
-        type, date = self.get_type_date_from_path(file_name)
+        _, date = self.get_type_date_from_path(file_name)
         joined_table["date_evaluation"] = pd.to_datetime(date)
         # Add source
         joined_table["raw_source"] = file_name
@@ -133,7 +135,7 @@ class ScaleLeaderbord:
         logger.debug(joined_table)
         # Save joined table in 02_intermediate folder
         output_file_path = Path(LOCAL_PATH_TO_INT_DATA) / self.file_name(
-            type="intermediate", extension="parquet"
+            type="intermediate", extension="parquet", date=date
         )
         joined_table.to_parquet(path=output_file_path)
         logger.info(f"Saved formatted Dataframe to {output_file_path}")
@@ -171,4 +173,4 @@ class ScaleLeaderbord:
 if __name__ == "__main__":
     sc = ScaleLeaderbord()
     # sc.get_raw_data()
-    sc.parse_html()
+    sc.get_intermediate_from_raw()
