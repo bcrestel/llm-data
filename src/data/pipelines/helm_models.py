@@ -1,25 +1,26 @@
+import glob
 import json
 import logging
 from datetime import datetime
 from pathlib import Path
-from typing import Optional, List, Tuple
-import pandas as pd
-import numpy as np
-import glob
+from typing import List, Optional, Tuple
 
+import numpy as np
+import pandas as pd
 import requests
 
 from src.utils.constant import (
     HELM_MODEL_FILE_PREFIX,
     HELM_MODEL_URL,
     HELM_REPO_MAIN,
-    LOCAL_PATH_TO_RAW_DATA,
     LOCAL_PATH_TO_INT_DATA,
+    LOCAL_PATH_TO_RAW_DATA,
     PATH_TO_RAW_DATA_LOG,
 )
 from src.utils.date import get_date_YYYY_MM_DD
 from src.utils.git import get_current_git_commit_short
 from src.utils.io.text import save_to_text
+from src.utils.io.yaml import load_from_yaml
 from src.utils.path import (
     change_permission_single_file,
     chmod_from_bottom_to_top,
@@ -27,7 +28,6 @@ from src.utils.path import (
     get_shasum,
 )
 from src.utils.web import get_html_content_from_url
-from src.utils.io.yaml import load_from_yaml
 
 logging.basicConfig(
     level=logging.DEBUG,
@@ -84,13 +84,12 @@ class HelmModels:
             now = datetime.now()
             date = now.strftime("%Y-%m-%d")
         return Path(f"{HELM_MODEL_FILE_PREFIX}_{type}_{date}_{commit}.{extension}")
-    
+
     def get_intermediate_from_raw(self, raw_filename: Optional[str] = None):
         if raw_filename is None:
             # if no file_name provided, select the most recent raw file
             file_pattern = (
-                Path(LOCAL_PATH_TO_RAW_DATA)
-                / f"{HELM_MODEL_FILE_PREFIX}_*.yaml"
+                Path(LOCAL_PATH_TO_RAW_DATA) / f"{HELM_MODEL_FILE_PREFIX}_*.yaml"
             )
             file_names = {}
             for ff in glob.glob(str(file_pattern)):
@@ -100,25 +99,39 @@ class HelmModels:
             raw_filename = file_names[date]
         _, date, commit = self.get_type_date_from_path(raw_filename)
         raw_content = load_from_yaml(raw_filename)
-        df_helm = pd.DataFrame(raw_content['models'])
+        df_helm = pd.DataFrame(raw_content["models"])
 
         # Clean-up
         # Drop dummy model + fat-finger column
-        df_helm = df_helm.set_index("name").drop("simple/model1").drop("tafs", axis=1).reset_index()
+        df_helm = (
+            df_helm.set_index("name")
+            .drop("simple/model1")
+            .drop("tafs", axis=1)
+            .reset_index()
+        )
         # Replace NaN entries in 'tags' column with an empty list
-        df_helm['tags'] = df_helm['tags'].apply(lambda x: x if isinstance(x, list) else [])
+        df_helm["tags"] = df_helm["tags"].apply(
+            lambda x: x if isinstance(x, list) else []
+        )
 
         # Add a short_name column, w/o the org name
-        df_helm['short_name'] = df_helm['name'].str.split('/', expand=True)[1]
+        df_helm["short_name"] = df_helm["name"].str.split("/", expand=True)[1]
         # Create tags one-hot encoding:
-        df_tags_onehot = df_helm['tags'].apply(lambda x: pd.Series(1, index=x)).fillna(0).astype(int)
-        df_helm = pd.concat([df_helm, df_tags_onehot], axis=1).drop(columns='tags')
+        df_tags_onehot = (
+            df_helm["tags"].apply(lambda x: pd.Series(1, index=x)).fillna(0).astype(int)
+        )
+        df_helm = pd.concat([df_helm, df_tags_onehot], axis=1).drop(columns="tags")
 
         # Typing
         df_helm["release_date"] = pd.to_datetime(df_helm["release_date"])
 
         # Parse Description columns
-        df_tmp = df_helm["description"].apply(self.truncate_description).apply(pd.Series).rename(columns={0: "description", 1: "documentation"})
+        df_tmp = (
+            df_helm["description"]
+            .apply(self.truncate_description)
+            .apply(pd.Series)
+            .rename(columns={0: "description", 1: "documentation"})
+        )
         df_helm.drop(columns="description", inplace=True)
         df_helm = pd.concat([df_helm, df_tmp], axis=1)
 
@@ -132,17 +145,17 @@ class HelmModels:
 
     @staticmethod
     def tag_columns(df: pd.DataFrame) -> List:
-        return [col for col in df.columns if col.endswith('_TAG')]
-    
+        return [col for col in df.columns if col.endswith("_TAG")]
+
     @staticmethod
     def truncate_description(text):
         open_par = False
         for i, char in enumerate(text):
-            if char == '(':
+            if char == "(":
                 open_par = True
-            elif char == '[':
+            elif char == "[":
                 if open_par == True:
-                    return text[:i-1], text[i:]
+                    return text[: i - 1], text[i:]
             else:
                 open_par = False
         return text, np.NaN
@@ -160,7 +173,11 @@ class HelmModels:
         path = Path(path)
         file_name = path.stem
         file_name_components = file_name.split("_")
-        return file_name_components[-3], file_name_components[-2], file_name_components[-1]
+        return (
+            file_name_components[-3],
+            file_name_components[-2],
+            file_name_components[-1],
+        )
 
 
 if __name__ == "__main__":

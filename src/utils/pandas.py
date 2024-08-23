@@ -1,5 +1,7 @@
 from collections import defaultdict
+
 import pandas as pd
+
 
 def print_dataframe_col_per_alphanumeric(df: pd.DataFrame, column: str):
     groups = defaultdict(list)
