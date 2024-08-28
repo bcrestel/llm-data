@@ -17,9 +17,9 @@ from src.utils.constant import (
     LOCAL_PATH_TO_RAW_DATA,
 )
 from src.utils.git import get_current_git_commit_short
+from src.utils.io.protected_folder import ProtectedFolder
 from src.utils.io.text import save_to_text
 from src.utils.io.yaml import load_from_yaml
-from src.utils.io.protected_folder import ProtectedFolder
 from src.utils.web import get_html_content_from_url
 
 logging.basicConfig(
@@ -45,12 +45,14 @@ class HelmModels:
 
         logger.info(f"Saving url {self.url} to file {file_name}")
         html_content = get_html_content_from_url(self.url)
-        folder = ProtectedFolder(root_folder=LOCAL_PATH_TO_RAW_DATA, log_name="raw_data_log.json")
+        folder = ProtectedFolder(
+            root_folder=LOCAL_PATH_TO_RAW_DATA, log_name="raw_data_log.json"
+        )
         source = f"src/data/helm_models.py--{get_current_git_commit_short()}"
         folder.save_file(
             save_function=save_to_text,
-            parameters={'file_name': file_name, 'content': html_content},
-            source=source
+            parameters={"file_name": file_name, "content": html_content},
+            source=source,
         )
 
     @staticmethod

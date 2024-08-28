@@ -1,9 +1,15 @@
-from pathlib import Path
 import json
-from src.utils.path import get_shasum, chmod_from_bottom_to_top, change_permission_single_file, chmod_from_top_to_bottom
-from src.utils.date import get_date_YYYY_MM_DD
 import logging
+from pathlib import Path
 from typing import Optional
+
+from src.utils.date import get_date_YYYY_MM_DD
+from src.utils.path import (
+    change_permission_single_file,
+    chmod_from_bottom_to_top,
+    chmod_from_top_to_bottom,
+    get_shasum,
+)
 
 logging.basicConfig(
     level=logging.DEBUG,
@@ -17,7 +23,13 @@ class ProtectedFolder:
         self.root_folder = Path(root_folder)
         self.log_name = log_name
 
-    def save_file(self, save_function: callable, parameters: dict, source: str = "", file_name: Optional[str] = None) -> None:
+    def save_file(
+        self,
+        save_function: callable,
+        parameters: dict,
+        source: str = "",
+        file_name: Optional[str] = None,
+    ) -> None:
         if file_name is None:
             file_name = parameters["file_name"]
         file_name = Path(file_name)
@@ -26,7 +38,7 @@ class ProtectedFolder:
         log_path = self.add_entry_to_log(file_name=file_name, source=source)
         change_permission_single_file(file_name, permission=0o444)
         chmod_from_bottom_to_top(self.root_folder, log_path, permission=0o544)
-    
+
     def add_entry_to_log(self, file_name: Path, source: str) -> Path:
         log_path = file_name.parent / self.log_name
 
@@ -49,5 +61,7 @@ class ProtectedFolder:
         logger.debug(data)
         with open(log_path, "w") as file:
             json.dump(data, file, indent=4)
-        
+
         return log_path
+
+    # TODO: move chmod_* functions here after confirming they are not used anywhere else

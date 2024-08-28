@@ -19,4 +19,8 @@ HELM_REPO_MAIN = "https://api.github.com/repos/stanford-crfm/helm/commits/main"
 HELM_MODEL_URL = "https://raw.githubusercontent.com/stanford-crfm/helm/main/src/helm/config/model_metadata.yaml"
 HELM_MODEL_FILE_PREFIX = "helm_models"
 
-LLMPRICING_URL = "https://huggingface.co/spaces/philschmid/llm-pricing/raw/main/src/lib/data.ts"
+LLMPRICING_URL = (
+    "https://huggingface.co/spaces/philschmid/llm-pricing/raw/main/src/lib/data.ts"
+)
+LLMPRICING_API = "https://huggingface.co/api/spaces/philschmid/llm-pricing/"
+LLMPRICING_FILE_PREFIX = "llm_pricing"
