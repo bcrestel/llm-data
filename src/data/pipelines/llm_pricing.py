@@ -29,7 +29,7 @@ class LLMPricing:
         self.api_path = LLMPRICING_API
 
     def get_raw_data(self) -> None:
-        response = requests.get(self.main_repo_url)
+        response = requests.get(self.api_path)
         commit = response.json()["sha"][:7]
         file_name = Path(LOCAL_PATH_TO_RAW_DATA) / self.file_name(
             type="raw", extension="ts", commit=commit

@@ -33,15 +33,18 @@ class ProtectedFolder:
         if file_name is None:
             file_name = parameters["file_name"]
         file_name = Path(file_name)
-        chmod_from_top_to_bottom(self.root_folder, file_name.parent, permission=0o744)
+        log_path = self.log_path(file_name)
+        chmod_from_top_to_bottom(self.root_folder, log_path, permission=0o744)
         save_function(**parameters)
-        log_path = self.add_entry_to_log(file_name=file_name, source=source)
+        self.add_entry_to_log(file_name=file_name, source=source)
         change_permission_single_file(file_name, permission=0o444)
         chmod_from_bottom_to_top(self.root_folder, log_path, permission=0o544)
 
-    def add_entry_to_log(self, file_name: Path, source: str) -> Path:
-        log_path = file_name.parent / self.log_name
+    def log_path(self, file_name: Path) -> Path:
+        return file_name.parent / self.log_name
 
+    def add_entry_to_log(self, file_name: Path, source: str):
+        log_path = self.log_path(file_name)
         if log_path.exists():
             with open(log_path, "r") as file:
                 data = json.load(file)
@@ -61,7 +64,5 @@ class ProtectedFolder:
         logger.debug(data)
         with open(log_path, "w") as file:
             json.dump(data, file, indent=4)
-
-        return log_path
 
     # TODO: move chmod_* functions here after confirming they are not used anywhere else

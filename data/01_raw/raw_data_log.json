@@ -16,5 +16,11 @@
         "source": "src/data/helm_models.py--1d52fc3",
         "date": "2024-08-14",
         "shasum": "9a0045605a0613eccf9fac2f06e50151d02b4fbb"
+    },
+    {
+        "file_name": "data/01_raw/llm_pricing_raw_2024-08-28_ac5612b.ts",
+        "source": "/home/src/data/pipelines/llm_pricing.py--8874162",
+        "date": "2024-08-28",
+        "shasum": "139465067cae16d4e8000328bca2f73bbc89ee6d"
     }
 ]
