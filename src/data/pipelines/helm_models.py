@@ -15,18 +15,11 @@ from src.utils.constant import (
     HELM_REPO_MAIN,
     LOCAL_PATH_TO_INT_DATA,
     LOCAL_PATH_TO_RAW_DATA,
-    PATH_TO_RAW_DATA_LOG,
 )
-from src.utils.date import get_date_YYYY_MM_DD
 from src.utils.git import get_current_git_commit_short
 from src.utils.io.text import save_to_text
 from src.utils.io.yaml import load_from_yaml
-from src.utils.path import (
-    change_permission_single_file,
-    chmod_from_bottom_to_top,
-    chmod_from_top_to_bottom,
-    get_shasum,
-)
+from src.utils.io.protected_folder import ProtectedFolder
 from src.utils.web import get_html_content_from_url
 
 logging.basicConfig(
@@ -51,30 +44,14 @@ class HelmModels:
         )
 
         logger.info(f"Saving url {self.url} to file {file_name}")
-        chmod_from_top_to_bottom(
-            LOCAL_PATH_TO_RAW_DATA, PATH_TO_RAW_DATA_LOG, permission=0o744
-        )
         html_content = get_html_content_from_url(self.url)
-        save_to_text(file_name=file_name, content=html_content)
-        with open(PATH_TO_RAW_DATA_LOG, "r") as file:
-            data = json.load(file)
-        logger.debug(data)
-        # Create new entry for json
-        shasum = get_shasum(file_name)
+        folder = ProtectedFolder(root_folder=LOCAL_PATH_TO_RAW_DATA, log_name="raw_data_log.json")
         source = f"src/data/helm_models.py--{get_current_git_commit_short()}"
-        new_entry = {
-            "file_name": f"{file_name}",
-            "source": f"{source}",
-            "date": f"{get_date_YYYY_MM_DD()}",
-            "shasum": f"{shasum}",
-        }
-        data.append(new_entry)
-        logger.debug(data)
-        with open(PATH_TO_RAW_DATA_LOG, "w") as file:
-            json.dump(data, file, indent=4)
-        change_permission_single_file(PATH_TO_RAW_DATA_LOG, permission=0o444)
-        chmod_from_bottom_to_top(LOCAL_PATH_TO_RAW_DATA, file_name, permission=0o444)
-        change_permission_single_file(LOCAL_PATH_TO_RAW_DATA, permission=0o544)
+        folder.save_file(
+            save_function=save_to_text,
+            parameters={'file_name': file_name, 'content': html_content},
+            source=source
+        )
 
     @staticmethod
     def file_name(
